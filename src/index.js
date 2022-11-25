@@ -64,16 +64,21 @@ function search(event) {
   }
 }
 
+function getForecast(city) {
+  let apiKey = "f5a9f38100065t0934bo1b43d42ba03a";
+  let units = "metric";
+  let apiUrl = `https://api.shecodes.io/weather/v1/forecast?query=${city}&key=${apiKey}&units=${units}`;
+
+  axios.get(apiUrl).then(displayForecast);
+}
+
 function displayTemp(response) {
-  celsiusTemperature = Math.round(response.data.main.temp);
+  let celsiusTemperature = Math.round(response.data.temperature.current);
   let temp = document.querySelector("#current-temperature");
   temp.innerHTML = `${celsiusTemperature}˚C`;
 
-  celsiusLink.classList.add("inactive");
-  fahrenheitLink.classList.remove("inactive");
-
   let currentCity = document.querySelector("#city-search-result");
-  currentCity.innerHTML = response.data.name;
+  currentCity.innerHTML = response.data.city;
 
   let windSpeed = document.querySelector("#wind");
   windSpeed.innerHTML = `Wind speed: ${Math.round(
@@ -81,20 +86,19 @@ function displayTemp(response) {
   )} m/s`;
 
   let weatherDescription = document.querySelector("#description");
-  weatherDescription.innerHTML = `Weather description: ${response.data.weather[0].description}`;
+  weatherDescription.innerHTML = `Weather description: ${response.data.condition.description}`;
 
   let weatherIcon = document.querySelector("#icon");
-  weatherIcon.setAttribute(
-    "src",
-    `http://openweathermap.org/img/wn/${response.data.weather[0].icon}@2x.png`
-  );
-  weatherIcon.setAttribute("alt", response.data.weather[0].description);
+  weatherIcon.setAttribute("src", `${response.data.condition.icon_url}`);
+  weatherIcon.setAttribute("alt", response.data.condition.description);
+
+  getForecast(response.data.city);
 }
 
 function searchLocation(city) {
-  let apiKey = "393db4e5c25bdf1bb6b5d70d133f7a67";
+  let apiKey = "f5a9f38100065t0934bo1b43d42ba03a";
   let units = "metric";
-  let apiUrl = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=${units}`;
+  let apiUrl = `https://api.shecodes.io/weather/v1/current?query=${city}&key=${apiKey}&units=${units}`;
   axios.get(apiUrl).then(displayTemp);
 }
 
@@ -107,31 +111,54 @@ function getData(event) {
 let searchingForm = document.querySelector("#search-form");
 searchingForm.addEventListener("submit", getData);
 
-function displayFahrenheitTemperature(event) {
-  event.preventDefault();
-  if (celsiusTemperature !== null) {
-    celsiusLink.classList.remove("inactive");
-    fahrenheitLink.classList.add("inactive");
-    let fahrenheitTemperature = (celsiusTemperature * 9) / 5 + 32;
-    let temperatureElement = document.querySelector("#current-temperature");
-    temperatureElement.innerHTML = `${Math.round(fahrenheitTemperature)}˚F`;
-  }
+function getDayOfTheWeek(timestamp) {
+  let date = new Date(timestamp * 1000);
+  let day = date.getDay();
+  let daysOfTheWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  return daysOfTheWeek[day];
 }
 
-function displayCelsiusTemperature(event) {
-  event.preventDefault();
-  if (celsiusTemperature !== null) {
-    celsiusLink.classList.add("inactive");
-    fahrenheitLink.classList.remove("inactive");
-    let temperatureElement = document.querySelector("#current-temperature");
-    temperatureElement.innerHTML = `${celsiusTemperature}˚C`;
-  }
+function displayForecast(response) {
+  let forecast = response.data.daily;
+
+  let forecastElement = document.querySelector("#forecast");
+
+  let forecastHTML = `<table class="temperature"> 
+                        <tr>`;
+  forecast.forEach(function (forecastDay, index) {
+    if (index > 0 && index < 6) {
+      forecastHTML =
+        forecastHTML +
+        `<td><strong>${getDayOfTheWeek(forecastDay.time)}</strong></td>`;
+    }
+  });
+
+  forecastHTML = forecastHTML + `</tr> <tr>`;
+  forecast.forEach(function (forecastDay, index) {
+    if (index > 0 && index < 6) {
+      forecastHTML =
+        forecastHTML +
+        `<td class="forecast-temperature">${Math.round(
+          forecastDay.temperature.minimum
+        )}°C - ${Math.round(forecastDay.temperature.maximum)}°C</td>`;
+    }
+  });
+
+  forecastHTML = forecastHTML + `</tr> <tr>`;
+  forecast.forEach(function (forecastDay, index) {
+    if (index > 0 && index < 6) {
+      forecastHTML =
+        forecastHTML +
+        `<td>
+          <img
+            src="${forecastDay.condition.icon_url}"
+            alt=""
+            width="62"
+          />
+        </td>`;
+    }
+  });
+
+  forecastHTML = forecastHTML + `</tr> </table>`;
+  forecastElement.innerHTML = forecastHTML;
 }
-
-let celsiusLink = document.querySelector("#celsius-link");
-celsiusLink.addEventListener("click", displayCelsiusTemperature);
-
-let fahrenheitLink = document.querySelector("#fahrenheit-link");
-fahrenheitLink.addEventListener("click", displayFahrenheitTemperature);
-
-celsiusTemperature = null;

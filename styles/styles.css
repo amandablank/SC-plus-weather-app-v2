@@ -150,12 +150,6 @@ i.icon {
   padding: 20px;
 }
 
-.units {
-  font-size: 34px;
-}
-
-a.inactive {
-  text-decoration: none;
-  color: #696464;
-  cursor: default;
+.forecast-temperature {
+  font-size: 15px;
 }
